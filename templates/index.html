@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Performance Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <header class="hero">
+            <p class="eyebrow">AI/ML PORTFOLIO PROJECT</p>
+            <h1>Gym Performance Intelligence</h1>
+            <p>Estimate repetitions, expected performance class, and an experimental workout-readiness score.</p>
+            <p class="disclaimer">Educational project using synthetic data. The readiness score is not medically or scientifically validated.</p>
+        </header>
+
+        {% if startup_error %}
+        <section class="error">
+            <strong>Project setup error:</strong> {{ startup_error }}
+        </section>
+        {% endif %}
+
+        <form action="/predict" method="post" class="card">
+            <h2>Workout Input</h2>
+
+            <div class="form-grid">
+                <label>Exercise
+                    <select name="exercise" required>
+                        {% for item in exercises %}
+                        <option value="{{ item }}" {% if form.get('exercise') == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>Age
+                    <input type="number" name="age" min="14" max="100" value="{{ form.get('age', 19) }}" required>
+                </label>
+
+                <label>Height (cm)
+                    <input type="number" step="0.1" name="height_cm" min="120" max="230" value="{{ form.get('height_cm', 188) }}" required>
+                </label>
+
+                <label>Body weight (kg)
+                    <input type="number" step="0.1" name="body_weight_kg" min="30" max="300" value="{{ form.get('body_weight_kg', 74) }}" required>
+                </label>
+
+                <label>Training experience (months)
+                    <input type="number" name="training_experience_months" min="0" max="600" value="{{ form.get('training_experience_months', 12) }}" required>
+                </label>
+
+                <label>Sleep hours
+                    <input type="number" step="0.1" name="sleep_hours" min="0" max="16" value="{{ form.get('sleep_hours', 8) }}" required>
+                </label>
+
+                <label>Sleep quality (1-5)
+                    <input type="number" name="sleep_quality" min="1" max="5" value="{{ form.get('sleep_quality', 4) }}" required>
+                </label>
+
+                <label>Stress level (1-5)
+                    <input type="number" name="stress_level" min="1" max="5" value="{{ form.get('stress_level', 2) }}" required>
+                </label>
+
+                <label>Muscle soreness (1-5)
+                    <input type="number" name="muscle_soreness" min="1" max="5" value="{{ form.get('muscle_soreness', 2) }}" required>
+                </label>
+
+                <label>Days since same muscle trained
+                    <input type="number" name="days_since_last_training_same_muscle" min="0" max="30" value="{{ form.get('days_since_last_training_same_muscle', 3) }}" required>
+                </label>
+
+                <label>Last meal calories
+                    <input type="number" step="0.1" name="last_meal_calories" min="0" max="3000" value="{{ form.get('last_meal_calories', 650) }}" required>
+                </label>
+
+                <label>Last meal carbs (g)
+                    <input type="number" step="0.1" name="last_meal_carbs_g" min="0" max="500" value="{{ form.get('last_meal_carbs_g', 90) }}" required>
+                </label>
+
+                <label>Last meal protein (g)
+                    <input type="number" step="0.1" name="last_meal_protein_g" min="0" max="250" value="{{ form.get('last_meal_protein_g', 35) }}" required>
+                </label>
+
+                <label>Last meal fat (g)
+                    <input type="number" step="0.1" name="last_meal_fat_g" min="0" max="250" value="{{ form.get('last_meal_fat_g', 20) }}" required>
+                </label>
+
+                <label>Minutes since last meal
+                    <input type="number" name="minutes_since_last_meal" min="0" max="1440" value="{{ form.get('minutes_since_last_meal', 120) }}" required>
+                </label>
+
+                <label>Water before workout (ml)
+                    <input type="number" step="0.1" name="water_before_workout_ml" min="0" max="5000" value="{{ form.get('water_before_workout_ml', 700) }}" required>
+                </label>
+
+                <label>Caffeine (mg)
+                    <input type="number" step="0.1" name="caffeine_mg" min="0" max="1000" value="{{ form.get('caffeine_mg', 100) }}" required>
+                </label>
+
+                <label>Weight lifted (kg)
+                    <input type="number" step="0.1" name="weight_lifted_kg" min="0" max="1000" value="{{ form.get('weight_lifted_kg', 60) }}" required>
+                </label>
+
+                <label>Set number
+                    <input type="number" name="set_number" min="1" max="20" value="{{ form.get('set_number', 1) }}" required>
+                </label>
+
+                <label>Previous-session reps
+                    <input type="number" name="previous_session_reps" min="0" max="100" value="{{ form.get('previous_session_reps', 10) }}" required>
+                </label>
+
+                <label>Recent average reps
+                    <input type="number" step="0.1" name="recent_average_reps" min="0" max="100" value="{{ form.get('recent_average_reps', 10) }}" required>
+                </label>
+            </div>
+
+            <button type="submit" {% if startup_error %}disabled{% endif %}>Generate Intelligence Report</button>
+        </form>
+
+        {% if result %}
+        <section class="card result" id="result">
+            <p class="eyebrow">PREDICTION REPORT</p>
+            <h2>{{ result.exercise }} · {{ "%.1f"|format(result.weight_lifted_kg) }} kg</h2>
+
+            <div class="metrics">
+                <article><span>Predicted Reps</span><strong>{{ result.predicted_reps }}</strong></article>
+                <article><span>Expected Performance</span><strong>{{ result.predicted_class }}</strong></article>
+                <article><span>Workout Readiness</span><strong>{{ result.readiness }}/100</strong></article>
+            </div>
+
+            <div class="report-grid">
+                <div>
+                    <h3>Positive Factors</h3>
+                    <ul>{% for item in result.positives %}<li>{{ item }}</li>{% endfor %}</ul>
+                </div>
+                <div>
+                    <h3>Limiting Factors</h3>
+                    <ul>{% for item in result.limiting %}<li>{{ item }}</li>{% endfor %}</ul>
+                </div>
+            </div>
+
+            <h3>Individual Readiness Factors</h3>
+            <div class="factor-list">
+                {% for name, score in result.factor_scores.items() %}
+                <div class="factor">
+                    <div><span>{{ name }}</span><strong>{{ score }}/100</strong></div>
+                    <progress max="100" value="{{ score }}"></progress>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+    <script src="{{ url_for('static', path='/script.js') }}"></script>
+</body>
+</html>
